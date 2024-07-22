@@ -60,8 +60,8 @@ export PYTHONUSERBASE=$HOME/.local
 
 # Install Python packages if not already installed
 python_packages=(
-    "dlib"
-    "face-recognition"
+    "dlib==19.24.4"
+    "face-recognition==1.3.0"
 )
 
 for package in "${python_packages[@]}"; do
