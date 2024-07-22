@@ -7,6 +7,16 @@ command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
+# Function to check if a package is installed
+package_installed() {
+    dpkg -s "$1" >/dev/null 2>&1
+}
+
+# Function to check if a Python package is installed
+python_package_installed() {
+    pip show --user "$1" >/dev/null 2>&1
+}
+
 # Check if dpkg is available, if not, try to install it
 if ! command_exists dpkg; then
     echo "dpkg is not installed. Attempting to install it..."
@@ -19,16 +29,6 @@ if ! command_exists dpkg; then
         exit 1
     fi
 fi
-
-# Function to check if a package is installed
-package_installed() {
-    dpkg -s "$1" >/dev/null 2>&1
-}
-
-# Function to check if a Python package is installed
-python_package_installed() {
-    pip show "$1" >/dev/null 2>&1
-}
 
 # Update package lists
 apt-get update
@@ -55,13 +55,19 @@ for package in "${packages[@]}"; do
     fi
 done
 
-# Set Python user base to home directory to persist installations
-export PYTHONUSERBASE=$HOME/.local
+# Set up a persistent location for Python packages
+export PYTHONUSERBASE=/home/site/pythonpackages
+
+# Ensure the directory exists
+mkdir -p $PYTHONUSERBASE
+
+# Determine the Python version
+PYTHON_VERSION=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
 
 # Install Python packages if not already installed
 python_packages=(
-    "dlib==19.24.4"
-    "face-recognition==1.3.0"
+    "dlib"
+    "face-recognition"
 )
 
 for package in "${python_packages[@]}"; do
@@ -73,9 +79,9 @@ for package in "${python_packages[@]}"; do
     fi
 done
 
-# Update PATH and LD_LIBRARY_PATH to include user base directories
+# Update PATH and PYTHONPATH to include the persistent package location
 export PATH=$PYTHONUSERBASE/bin:$PATH
-export LD_LIBRARY_PATH=$PYTHONUSERBASE/lib:$LD_LIBRARY_PATH
+export PYTHONPATH=$PYTHONUSERBASE/lib/python$PYTHON_VERSION/site-packages:$PYTHONPATH
 
 # Start the Flask app
 gunicorn --bind=0.0.0.0 --timeout 1800 app:app
