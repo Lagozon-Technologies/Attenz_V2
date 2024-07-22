@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e  # Exit immediately if a command exits with a non-zero status
+
 # Function to check if a command is available
 command_exists() {
     command -v "$1" >/dev/null 2>&1
@@ -53,6 +55,9 @@ for package in "${packages[@]}"; do
     fi
 done
 
+# Set Python user base to home directory to persist installations
+export PYTHONUSERBASE=$HOME/.local
+
 # Install Python packages if not already installed
 python_packages=(
     "dlib"
@@ -62,11 +67,15 @@ python_packages=(
 for package in "${python_packages[@]}"; do
     if ! python_package_installed "$package"; then
         echo "Installing $package..."
-        pip install "$package"
+        pip install --user "$package"
     else
         echo "$package is already installed."
     fi
 done
+
+# Update PATH and LD_LIBRARY_PATH to include user base directories
+export PATH=$PYTHONUSERBASE/bin:$PATH
+export LD_LIBRARY_PATH=$PYTHONUSERBASE/lib:$LD_LIBRARY_PATH
 
 # Start the Flask app
 gunicorn --bind=0.0.0.0 --timeout 1800 app:app
